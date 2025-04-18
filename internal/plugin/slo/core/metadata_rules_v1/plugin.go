@@ -52,15 +52,14 @@ func generateMetadataRecordingRules(ctx context.Context, info model.Info, slo mo
 
 	sloObjectiveRatio := slo.Objective / 100
 
-	sloFilter := promutils.LabelsToPromFilter(conventions.GetSLOIDPromLabels(slo))
+	sloFilter := promutils.LabelsToPromFilter(labels)
+	sliGroup := promutils.LabelsToPromGroup(labels)
 
 	var currentBurnRateExpr bytes.Buffer
 	err := burnRateRecordingExprTpl.Execute(&currentBurnRateExpr, map[string]string{
 		"SLIErrorMetric":         conventions.GetSLIErrorMetric(alerts.PageQuick.ShortWindow),
 		"MetricFilter":           sloFilter,
-		"SLOIDName":              conventions.PromSLOIDLabelName,
-		"SLOLabelName":           conventions.PromSLONameLabelName,
-		"SLOServiceName":         conventions.PromSLOServiceLabelName,
+		"SLIGroup":               sliGroup,
 		"ErrorBudgetRatioMetric": metricSLOErrorBudgetRatio,
 	})
 	if err != nil {
@@ -71,9 +70,7 @@ func generateMetadataRecordingRules(ctx context.Context, info model.Info, slo mo
 	err = burnRateRecordingExprTpl.Execute(&periodBurnRateExpr, map[string]string{
 		"SLIErrorMetric":         conventions.GetSLIErrorMetric(slo.TimeWindow),
 		"MetricFilter":           sloFilter,
-		"SLOIDName":              conventions.PromSLOIDLabelName,
-		"SLOLabelName":           conventions.PromSLONameLabelName,
-		"SLOServiceName":         conventions.PromSLOServiceLabelName,
+		"SLIGroup":               sliGroup,
 		"ErrorBudgetRatioMetric": metricSLOErrorBudgetRatio,
 	})
 	if err != nil {
@@ -140,6 +137,6 @@ func generateMetadataRecordingRules(ctx context.Context, info model.Info, slo mo
 }
 
 var burnRateRecordingExprTpl = template.Must(template.New("burnRateExpr").Option("missingkey=error").Parse(`{{ .SLIErrorMetric }}{{ .MetricFilter }}
-/ on({{ .SLOIDName }}, {{ .SLOLabelName }}, {{ .SLOServiceName }}) group_left
+/ on({{ .SLIGroup }}) group_left
 {{ .ErrorBudgetRatioMetric }}{{ .MetricFilter }}
 `))

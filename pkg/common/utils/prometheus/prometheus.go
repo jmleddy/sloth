@@ -1,6 +1,7 @@
 package prometheus
 
 import (
+	"sort"
 	"time"
 
 	prommodel "github.com/prometheus/common/model"
@@ -19,4 +20,15 @@ func LabelsToPromFilter(labels map[string]string) string {
 	}
 
 	return metricFilters.String()
+}
+
+// LabelsToPromMatch converts a map of labels to a Prometheus filter string.
+func LabelsToPromGroup(labels map[string]string) string {
+	metricGroup := prommodel.LabelNames{}
+	for k, _ := range labels {
+		metricGroup = append(metricGroup, prommodel.LabelName(k))
+	}
+
+	sort.Sort(metricGroup)
+	return metricGroup.String()
 }
